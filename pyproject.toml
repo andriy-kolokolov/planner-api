@@ -1,0 +1,23 @@
+[project]
+name = "planner-api"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "koloandre"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.dependencies]
+fastapi = '0.115.14'
+uvicorn = '0.35.0'
+sqlalchemy = '2.0.41'
+psycopg2-binary = '2.9.10'

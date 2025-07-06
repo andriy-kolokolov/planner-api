@@ -1,0 +1,21 @@
+services:
+  api:
+    # ① Bind-mount source and Poetry files
+    volumes:
+      - ./app:/srv/app
+#      - ./.venv:/srv/.venv            # <-- single shared venv (if needed on host, eg. for autocompletion)
+      - ./pyproject.toml:/srv/pyproject.toml
+      - ./poetry.lock:/srv/poetry.lock
+
+    # ② Light-weight entrypoint: bootstrap venv only if host mount is empty
+    entrypoint: >
+      /bin/sh -c "
+        if [ ! -f /srv/.venv/bin/activate ]; then
+          echo 'Bootstrapping dev venv …'
+          python -m venv /srv/.venv && . /srv/.venv/bin/activate &&
+          pip install --upgrade pip poetry &&
+          poetry install
+        fi &&
+        exec \"$@\"
+      " --
+    command: [ "uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000" ]
