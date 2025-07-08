@@ -2,7 +2,7 @@ from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.repositories.task_repo import TaskRepository
+from app.repositories.task_repository import TaskRepository
 from app.schemas.task import TaskCreate, TaskRead
 from typing import Optional, List
 

@@ -1,38 +1,28 @@
-from datetime import datetime
-from typing import Optional
-
+# Updated schemas (schemas/user.py)
 from pydantic import BaseModel, EmailStr
-
+from typing import Optional
 
 class UserBase(BaseModel):
     name: str
     lastname: str
     email: EmailStr
-    gender: Optional[str]
-    is_active: Optional[bool]
-
+    username: str
+    gender: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    lastname: Optional[str] = None
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    gender: Optional[str] = None
 
 class UserRead(UserBase):
     id: int
-    email_verified_at: Optional[datetime]
-    created_at: datetime
-    updated_at: datetime
+    is_active: bool
 
     class Config:
         from_attributes = True
-
-
-class UserUpdate(BaseModel):
-    name: Optional[str]
-    lastname: Optional[str]
-    email: Optional[str]
-    gender: Optional[str]
-    is_active: Optional[bool]
-    email_verified_at: Optional[datetime]
-
-class UserPassword(UserBase):
-    password: str
