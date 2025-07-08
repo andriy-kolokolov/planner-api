@@ -3,10 +3,10 @@ name = "planner-api"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "koloandre"}
+    { name = "koloandre" }
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<4.0"
 
 
 [build-system]
@@ -21,3 +21,7 @@ fastapi = '0.115.14'
 uvicorn = '0.35.0'
 sqlalchemy = '2.0.41'
 psycopg2-binary = '2.9.10'
+pydantic = { version = "*", extras = ["email"] }
+python-multipart = '0.0.20'
+fastapi-utils = '0.8.0'
+typing-inspect = '0.9.0'

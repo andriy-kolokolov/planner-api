@@ -1,23 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+# app/api/v1/tasks.py
+from fastapi import APIRouter
+from fastapi import HTTPException, status, Depends
+from fastapi_utils.cbv import cbv
 
-from app.db.session import get_db
-from app.schemas.task import TaskCreate, Task as TaskSchema
-from app.services.task_service import TaskService
+from app.schemas.task import TaskCreate, TaskRead
+from app.services.task_service import TaskService, get_task_service
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
-@router.post("/", response_model=TaskSchema, status_code=status.HTTP_201_CREATED)
-async def create_task(task_in: TaskCreate, db: Session = Depends(get_db)):
-    return TaskService(db).create_task(task_in)
 
-@router.get("/", response_model=list[TaskSchema])
-async def list_tasks(db: Session = Depends(get_db)):
-    return TaskService(db).list_tasks()
+@cbv(router)
+class Tasks:
+    service: TaskService = Depends(get_task_service)
 
-@router.get("/{task_id}", response_model=TaskSchema)
-async def read_task(task_id: int, db: Session = Depends(get_db)):
-    task = TaskService(db).get_task(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return task
+    @router.get("/", response_model=list[TaskRead])  # ← custom operationId)
+    def list(self):
+        return self.service.list_tasks()
+
+    @router.get("/{task_id}", response_model=TaskRead)
+    def read(self, task_id: int):
+        task = self.service.get_task(task_id)
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Task with id {task_id} not found",
+            )
+        return task
+
+    @router.post("/", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
+    def create(self, task_in: TaskCreate):
+        return self.service.create_task(task_in)

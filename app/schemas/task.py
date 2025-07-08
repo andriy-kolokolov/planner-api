@@ -9,7 +9,7 @@ class TaskCreate(TaskBase):
     pass
 
 
-class Task(TaskBase):
+class TaskRead(TaskBase):
     id: int
 
     class Config:

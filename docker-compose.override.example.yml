@@ -14,6 +14,7 @@ services:
           echo 'Bootstrapping dev venv …'
           python -m venv /srv/.venv && . /srv/.venv/bin/activate &&
           pip install --upgrade pip poetry &&
+          poetry lock &&
           poetry install
         fi &&
         exec \"$@\"
