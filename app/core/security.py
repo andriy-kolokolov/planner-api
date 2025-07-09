@@ -1,19 +1,18 @@
 # core/security.py
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Annotated
+from fastapi import Depends
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
+from app.core.config import Settings, get_settings
 from app.schemas.auth import TokenData
-
-ALGORITHM = "HS256"
-SECRET_KEY = os.getenv("SECRET_KEY")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+settings = get_settings()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -26,23 +25,27 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(
+        data: dict,
+        expires_delta: Optional[timedelta] = None,
+) -> str:
     """Create JWT access token with proper timezone handling."""
     to_encode = data.copy()
 
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.ACCESS_TOKEN_SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
 
 def decode_token(token: str) -> TokenData:
     """Decode and validate JWT token."""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.ACCESS_TOKEN_SECRET_KEY, algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
         user_id: int = payload.get("user_id")
         exp: datetime = datetime.fromtimestamp(payload.get("exp"), tz=timezone.utc)

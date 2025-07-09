@@ -8,12 +8,8 @@ from jose import JWTError, ExpiredSignatureError
 from jose.exceptions import JWTClaimsError
 from sqlalchemy.orm import Session
 
-from app.core.security import (
-    verify_password,
-    create_access_token,
-    decode_token,
-    ACCESS_TOKEN_EXPIRE_MINUTES
-)
+from app.core.config import get_settings
+from app.core.security import verify_password, create_access_token, decode_token
 from app.db.session import get_db
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
@@ -28,6 +24,7 @@ class AuthService:
     def __init__(self, db: Session):
         self.db = db
         self.user_repository = UserRepository(db)
+        self.settings = get_settings()
 
     def register_user(self, user_in: UserCreate) -> User:
         """Register a new user."""
@@ -57,7 +54,7 @@ class AuthService:
 
     def create_user_token(self, user: User) -> str:
         """Create JWT token for authenticated user."""
-        exp = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        exp = timedelta(minutes= self.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": user.username, "user_id": user.id},
             expires_delta=exp
