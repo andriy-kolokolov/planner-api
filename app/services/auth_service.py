@@ -10,14 +10,13 @@ from jose.exceptions import JWTClaimsError
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.security import verify_password, create_access_token, decode_token
+from app.core.security import verify_password, create_access_token, decode_token, oauth2_scheme
 from app.db.session import get_db
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import TokenData
 from app.schemas.user import UserCreate, UserRead
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 logger = logging.getLogger(__name__)
 
 

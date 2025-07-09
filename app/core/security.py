@@ -1,19 +1,18 @@
 # core/security.py
-import os
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, Annotated
-
 import logging
-from fastapi import Depends
+from datetime import datetime, timedelta, timezone
+from typing import Optional
 
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from app.core.config import Settings, get_settings
+from app.core.config import get_settings
 from app.schemas.auth import TokenData
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
 settings = get_settings()
 logger = logging.getLogger(__name__)
 

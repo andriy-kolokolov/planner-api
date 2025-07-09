@@ -4,6 +4,8 @@ from fastapi import HTTPException, status, Depends
 from fastapi_utils.cbv import cbv
 
 from app.schemas.task import TaskCreate, TaskRead
+from app.schemas.user import UserRead
+from app.services.auth_service import get_auth_service
 from app.services.task_service import TaskService, get_task_service
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -13,7 +15,7 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 class Tasks:
     service: TaskService = Depends(get_task_service)
 
-    @router.get("/", response_model=list[TaskRead])  # ← custom operationId)
+    @router.get("/", response_model=list[TaskRead])
     def list(self):
         return self.service.list_tasks()
 

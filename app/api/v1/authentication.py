@@ -1,5 +1,6 @@
 # app/api/v1/authentication.py
 import logging
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
@@ -75,6 +76,13 @@ class Auth:
 
         # Return LoginResponse instance
         return LoginResponse(token=token, user=user_read)
+
+    @router.post("/token")
+    async def token(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+        user_read = self.auth_service.authenticate_user(form_data.username, form_data.password)
+        access_token = self.auth_service.create_user_token(user_read)
+
+        return {"access_token": access_token, "token_type": "bearer"}
 
     @router.get("/verify-token", response_model=TokenData)
     def verify_token(self, token: str = Depends(oauth2_scheme)):
