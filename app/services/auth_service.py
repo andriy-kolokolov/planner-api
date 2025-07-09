@@ -1,6 +1,7 @@
 # services/auth_service.py
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
+from typing import Union
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -14,7 +15,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import TokenData
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserRead
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 logger = logging.getLogger(__name__)
@@ -52,14 +53,16 @@ class AuthService:
             )
         return user
 
-    def create_user_token(self, user: User) -> str:
-        """Create JWT token for authenticated user."""
-        exp = timedelta(minutes= self.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": user.username, "user_id": user.id},
-            expires_delta=exp
-        )
-        return access_token
+    def create_user_token(self, user: Union[User, UserRead]) -> str:
+        """Create access token for user (accepts both User model and UserRead schema)."""
+        # Access attributes directly - both User and UserRead have these
+        username = user.username
+        user_id = user.id
+
+        return create_access_token({
+            "username": username,
+            "user_id": user_id,
+        })
 
     def get_current_user(self, token: str = Depends(oauth2_scheme)) -> User:
         """Get current user from JWT token."""

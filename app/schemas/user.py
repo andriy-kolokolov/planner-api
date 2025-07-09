@@ -1,6 +1,7 @@
-# Updated schemas (schemas/user.py)
-from pydantic import BaseModel, EmailStr
+# app/schemas/user.py
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
+from datetime import datetime
 
 class UserBase(BaseModel):
     name: str
@@ -24,5 +25,13 @@ class UserRead(UserBase):
     id: int
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)  # Pydantic v2 syntax
+
+class UserInDB(UserRead):
+    """Schema that includes all DB fields"""
+    password: str
+    email_verified_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

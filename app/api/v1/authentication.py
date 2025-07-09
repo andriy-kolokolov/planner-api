@@ -1,68 +1,87 @@
-# routers/auth.py
+# app/api/v1/authentication.py
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_utils.cbv import cbv
 
 from app.repositories.user_repository import UserRepository, get_user_repository
-from app.schemas.auth import TokenData, LoginResponse, RegisterResponse
+from app.schemas.auth import TokenData, LoginResponse, RegisteredResponse, TokenRead
 from app.schemas.user import UserCreate, UserRead
 from app.services.auth_service import AuthService, get_auth_service, oauth2_scheme
+from app.services.user_service import get_user_service, UserService
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 logger = logging.getLogger(__name__)
 
 
-@router.post("/register", response_model=RegisterResponse)
-def register_user(
-        user_in: UserCreate,
-        user_repository: UserRepository = Depends(get_user_repository)
-):
-    try:
-        new_user = user_repository.get_by_username(user_in.username)
-        if new_user:
+@cbv(router)
+class Auth:
+
+    def __init__(
+            self,
+            user_repository: UserRepository = Depends(get_user_repository),
+            user_service: UserService = Depends(get_user_service),
+            auth_service: AuthService = Depends(get_auth_service)
+    ):
+        self.user_repository = user_repository
+        self.user_service = user_service
+        self.auth_service = auth_service
+
+    @router.post("/register", response_model=RegisteredResponse)
+    def register_user(self, user_in: UserCreate):
+        """Register a new user and return access token."""
+        try:
+            # Check if user already exists
+            existing_user = self.user_service.get_user_by_identifier(user_in.username, 'username')
+            if existing_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Username {user_in.username} already registered"
+                )
+
+            user = self.user_service.create_user(user_in)  # Returns UserRead
+            # Pass the UserRead object directly, not a dict
+            access_token = self.auth_service.create_user_token(user)
+
+            # Create TokenRead instance
+            token = TokenRead(value=access_token, type="bearer")
+
+            # Return RegisteredResponse instance
+            return RegisteredResponse(token=token, user=user)
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Registration error: {e}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Username {user_in.username} already registered"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Registration failed"
             )
-        user = user_repository.create(user_in)
-        access_token = get_auth_service().create_user_token(user)
-        return {
-            "token": {
-                "value": access_token,
-                "type": "bearer"
-            }, "user": user}
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
+    @router.post("/login", response_model=LoginResponse)
+    def login(self, form_data: OAuth2PasswordRequestForm = Depends()):
+        """Authenticate user and return access token."""
+        # authenticate_user returns a User model, not UserRead
+        db_user = self.auth_service.authenticate_user(form_data.username, form_data.password)
+        access_token = self.auth_service.create_user_token(db_user)
 
-@router.post("/login", response_model=LoginResponse)
-def login_for_access_token(
-        form_data: OAuth2PasswordRequestForm = Depends(),
-        auth_service: AuthService = Depends(get_auth_service)
-):
-    user = auth_service.authenticate_user(form_data.username, form_data.password)
-    access_token = auth_service.create_user_token(user)
-    return {
-        "token": {
-            "value": access_token,
-            "type": "bearer"
-        }, "user": user}
+        # (db_user) Model → (UserRead) Schema Conversions
+        user_read = UserRead.model_validate(db_user)
 
+        # Create TokenRead instance
+        token = TokenRead(value=access_token, type="bearer")
 
-@router.get("/verify-token", response_model=TokenData)
-def verify_token(
-        token: str = Depends(oauth2_scheme),
-        auth_service: AuthService = Depends(get_auth_service)
-):
-    """Verify token and return user data."""
-    return auth_service.validate_and_get_token_data(token)
+        # Return LoginResponse instance
+        return LoginResponse(token=token, user=user_read)
 
+    @router.get("/verify-token", response_model=TokenData)
+    def verify_token(self, token: str = Depends(oauth2_scheme)):
+        """Verify token and return user data."""
+        return self.auth_service.validate_and_get_token_data(token)
 
-@router.get("/current-user", response_model=UserRead)
-def current_user(
-        token: str = Depends(oauth2_scheme),
-        auth_service: AuthService = Depends(get_auth_service)
-):
-    return auth_service.get_current_user(token)
+    @router.get("/current-user", response_model=UserRead)
+    def current_user(self, token: str = Depends(oauth2_scheme)):
+        """Get current authenticated user."""
+        return self.auth_service.get_current_user(token)

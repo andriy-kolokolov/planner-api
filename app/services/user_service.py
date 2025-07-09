@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserRead
+from app.schemas.user import UserRead, UserCreate
 
-UserPropertyIdentifier = Literal["id", "email", "username", "token"]
+UserPropertyIdentifier = Literal["id", "email", "username"]
 ALLOWED_IDENTIFIERS = get_args(UserPropertyIdentifier)
 
 
@@ -21,6 +21,10 @@ class UserService:
 
     def list_users(self):
         return self.repo.list()
+
+    def create_user(self, user_in: UserCreate) -> UserRead:
+        db_user = self.repo.create(user_in)
+        return UserRead.model_validate(db_user)
 
     def get_user_by_identifier(
             self,
@@ -49,8 +53,6 @@ class UserService:
             db_user = self.repo.get_by_email(value)
         elif identifier == "username":
             db_user = self.repo.get_by_username(value)
-        elif identifier == "token":
-            db_user = self.repo.get_by_token(value)
         else:
             db_user = None
 

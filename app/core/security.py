@@ -2,6 +2,8 @@
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, Annotated
+
+import logging
 from fastapi import Depends
 
 from jose import JWTError, jwt
@@ -13,6 +15,7 @@ from app.schemas.auth import TokenData
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -46,7 +49,9 @@ def decode_token(token: str) -> TokenData:
     """Decode and validate JWT token."""
     try:
         payload = jwt.decode(token, settings.ACCESS_TOKEN_SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username: str = payload.get("sub")
+        logger.debug(payload)
+
+        username: str = payload.get("username")
         user_id: int = payload.get("user_id")
         exp: datetime = datetime.fromtimestamp(payload.get("exp"), tz=timezone.utc)
 
