@@ -1,16 +1,18 @@
 import logging
 
-import uvicorn
 from fastapi import FastAPI
 
 from app.api.v1 import api_v1
 from app.db.base import init_db
-from app.db.base import drop_db
+from app.middlewares.api_secret_middleware import APIKeyMiddleware
 
 app = FastAPI(
     title="Planner API",
 )
 app.include_router(api_v1)
+
+# # Add middleware
+app.add_middleware(APIKeyMiddleware)
 
 # Configure logging
 logging.basicConfig(

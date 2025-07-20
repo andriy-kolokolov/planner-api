@@ -6,10 +6,15 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
+    # app
+    APP_ENV: str = Field(default="production")
+
     # Security
     ACCESS_TOKEN_SECRET_KEY: str = Field(default="", min_length=32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
-    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_ALGORITHM: str = Field(default="HS256")
+    API_SECRET_KEY: str = Field(description="API secret key value", default="")
+    API_SECRET_HEADER_NAME: str = Field(default="X-API-Secret", description="Header name for API secret")
 
     # Database
     DB_HOST: str = Field(default="localhost")
