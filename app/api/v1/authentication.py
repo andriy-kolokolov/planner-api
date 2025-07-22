@@ -64,7 +64,6 @@ class Auth:
     @router.post("/login", response_model=LoginResponse)
     def login(self, form_data: OAuth2PasswordRequestForm = Depends()):
         """Authenticate user and return access token."""
-        # authenticate_user returns a User model, not UserRead
         db_user = self.auth_service.authenticate_user(form_data.username, form_data.password)
         access_token = self.auth_service.create_user_token(db_user)
 

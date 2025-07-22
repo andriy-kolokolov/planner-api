@@ -1,10 +1,8 @@
 # services/auth_service.py
 import logging
-from datetime import timedelta, datetime
 from typing import Union
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, ExpiredSignatureError
 from jose.exceptions import JWTClaimsError
 from sqlalchemy.orm import Session
@@ -71,7 +69,7 @@ class AuthService:
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
+                detail="Could not validate credentials or user do not exists",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
@@ -100,7 +98,7 @@ class AuthService:
             user = self.user_repository.get_by_username(token_payload.username)
             if user is None:
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    status_code=status.HTTP_404_NOT_FOUND,
                     detail="User not found or inactive",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
